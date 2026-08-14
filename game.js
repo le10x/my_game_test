@@ -1,11 +1,11 @@
-// game.js
 const CELL_SIZE = 64; 
 
 let playerPos = { x: 0, y: 0 };
-let currentLevelData = { cols: 0, rows: 0, blocks: [], traps: [], goal: {x:0, y:0}, start: {x:0, y:0}, walls: [] };
+let currentLevelData = null;
 
 function loadLevel() {
     const lvl = LEVEL_DATA;
+    currentLevelData = lvl;
     const screen = document.getElementById('game-screen');
     screen.innerHTML = '';
 
@@ -15,84 +15,57 @@ function loadLevel() {
     screen.style.width = (cols * CELL_SIZE) + 'px';
     screen.style.height = (rows * CELL_SIZE) + 'px';
 
-    currentLevelData = {
-        cols: cols,
-        rows: rows,
-        blocks: [],
-        traps: [],
-        goal: { x: 0, y: 0 },
-        start: { x: 0, y: 0 },
-        walls: []
-    };
-
-    // 1. Renderizar Fondo con tus Texturas (Autotiling)
+    // 1. Dibuja las casillas de fondo usando TUS imágenas PNG de la carpeta resources
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const tile = document.createElement('div');
-            tile.className = 'board-tile';
+            tile.style.position = 'absolute';
             tile.style.left = (c * CELL_SIZE) + 'px';
             tile.style.top = (r * CELL_SIZE) + 'px';
             tile.style.width = CELL_SIZE + 'px';
             tile.style.height = CELL_SIZE + 'px';
+            tile.style.backgroundSize = 'cover';
 
-            // Carga la textura desde la carpeta resources
             const tileTexture = getTileTexture(r, c, rows, cols);
             tile.style.backgroundImage = `url('resources/${tileTexture}')`;
-            tile.style.backgroundSize = 'cover';
             screen.appendChild(tile);
         }
     }
 
-    // 2. Procesar Objetos y Paredes Combinadas
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            const cellValue = lvl.map[r][c] || ".";
-            const items = cellValue.split(',').map(s => s.trim());
+    // 2. Dibuja los objetos (Jugador, Trampas, Bloques) usando TUS imágenes
+    lvl.map.forEach((rowStr, r) => {
+        const items = rowStr.split(',');
+        items.forEach((item, c) => {
+            const cleanItem = item.trim();
+            
+            if (cleanItem === 'P') {
+                playerPos = { x: c, y: r };
+                createImageEntity('Player.png', c, r, screen, 'player');
+            } else if (cleanItem === 'X') {
+                createImageEntity('Over.png', c, r, screen);
+            } else if (cleanItem === 'G') {
+                createImageEntity('Check.png', c, r, screen);
+            } else if (cleanItem === '#') {
+                createImageEntity('SolidBlock.png', c, r, screen);
+            } else if (['U', 'D', 'L', 'R'].includes(cleanItem)) {
+                createImageEntity(`${cleanItem}Wall.png`, c, r, screen);
+            }
+        });
+    });
+}
 
-            items.forEach(item => {
-                // Bloque Sólido
-                if (item === '#') {
-                    currentLevelData.blocks.push({ x: c, y: r });
-                    createEntity('solid-block', c, r, screen);
-                } 
-                // Trampa
-                else if (item === 'X') {
-                    currentLevelData.traps.push({ x: c, y: r });
-                    createEntity('trap-hazard', c, r, screen);
-                } 
-                // Meta
-                else if (item === 'G') {
-                    currentLevelData.goal = { x: c, y: r };
-                    const goal = createEntity('', c, r, screen);
-                    goal.id = 'goal';
-                } 
-                // Punto de Inicio / Jugador
-                else if (item === 'P') {
-                    currentLevelData.start = { x: c, y: r };
-                }
-                // Paredes Delgadas (U, D, L, R)
-                else if (['U', 'D', 'L', 'R'].includes(item)) {
-                    currentLevelData.walls.push({ x: c, y: r, type: item });
-                    const wall = document.createElement('div');
-                    wall.className = `wall-thin wall-${item}`;
-                    wall.style.left = (c * CELL_SIZE) + 'px';
-                    wall.style.top = (r * CELL_SIZE) + 'px';
-                    wall.style.width = CELL_SIZE + 'px';
-                    wall.style.height = CELL_SIZE + 'px';
-                    screen.appendChild(wall);
-                }
-            });
-        }
-    }
-
-    // 3. Crear Jugador
-    playerPos = { ...currentLevelData.start };
-    const player = document.createElement('div');
-    player.id = 'player';
-    player.style.width = CELL_SIZE + 'px';
-    player.style.height = CELL_SIZE + 'px';
-    screen.appendChild(player);
-    updatePlayerUI();
+function createImageEntity(imageName, c, r, container, id = '') {
+    const img = document.createElement('div');
+    if (id) img.id = id;
+    img.style.position = 'absolute';
+    img.style.left = (c * CELL_SIZE) + 'px';
+    img.style.top = (r * CELL_SIZE) + 'px';
+    img.style.width = CELL_SIZE + 'px';
+    img.style.height = CELL_SIZE + 'px';
+    img.style.backgroundImage = `url('resources/${imageName}')`;
+    img.style.backgroundSize = 'cover';
+    img.style.zIndex = id === 'player' ? '10' : '5';
+    container.appendChild(img);
 }
 
 function getTileTexture(r, c, rows, cols) {
@@ -102,18 +75,8 @@ function getTileTexture(r, c, rows, cols) {
     const isRight = (c === cols - 1);
 
     if (rows === 1 && cols === 1) return 'FullCenter.png';
-
-    if (rows === 1) {
-        if (isLeft) return 'LCap.png';
-        if (isRight) return 'RCap.png';
-        return 'HTube.png';
-    }
-
-    if (cols === 1) {
-        if (isTop) return 'UCap.png';
-        if (isBottom) return 'DCap.png';
-        return 'VTube.png';
-    }
+    if (rows === 1) return isLeft ? 'LCap.png' : (isRight ? 'RCap.png' : 'HTube.png');
+    if (cols === 1) return isTop ? 'UCap.png' : (isBottom ? 'DCap.png' : 'VTube.png');
 
     if (isTop && isLeft) return 'ULCorner.png';
     if (isTop && isRight) return 'URCorner.png';
@@ -128,83 +91,4 @@ function getTileTexture(r, c, rows, cols) {
     return 'Center.png';
 }
 
-function createEntity(className, c, r, container) {
-    const el = document.createElement('div');
-    if (className) el.className = className;
-    el.style.left = (c * CELL_SIZE) + 'px';
-    el.style.top = (r * CELL_SIZE) + 'px';
-    el.style.width = CELL_SIZE + 'px';
-    el.style.height = CELL_SIZE + 'px';
-    container.appendChild(el);
-    return el;
-}
-
-function move(dir) {
-    const lvl = currentLevelData;
-    let nextX = playerPos.x;
-    let nextY = playerPos.y;
-
-    if (dir === 'up') nextY--;
-    if (dir === 'down') nextY++;
-    if (dir === 'left') nextX--;
-    if (dir === 'right') nextX++;
-
-    if (nextX < 0 || nextX >= lvl.cols || nextY < 0 || nextY >= lvl.rows) return;
-    if (lvl.blocks.some(b => b.x === nextX && b.y === nextY)) return;
-    if (isBlockedByWall(playerPos.x, playerPos.y, nextX, nextY)) return;
-
-    playerPos.x = nextX;
-    playerPos.y = nextY;
-    updatePlayerUI();
-
-    if (lvl.traps.some(t => t.x === playerPos.x && t.y === playerPos.y)) {
-        setTimeout(() => {
-            alert("¡Caíste en una trampa!");
-            playerPos = { ...lvl.start };
-            updatePlayerUI();
-        }, 100);
-        return;
-    }
-
-    if (playerPos.x === lvl.goal.x && playerPos.y === lvl.goal.y) {
-        setTimeout(() => {
-            alert("¡Nivel Completado! 🎉");
-            loadLevel();
-        }, 100);
-    }
-}
-
-function isBlockedByWall(currX, currY, nextX, nextY) {
-    return currentLevelData.walls.some(w => {
-        if (w.x === currX && w.y === currY && w.type === 'L' && nextX < currX) return true;
-        if (w.x === currX && w.y === currY && w.type === 'R' && nextX > currX) return true;
-        if (w.x === currX && w.y === currY && w.type === 'U' && nextY < currY) return true;
-        if (w.x === currX && w.y === currY && w.type === 'D' && nextY > currY) return true;
-
-        if (w.x === nextX && w.y === nextY && w.type === 'R' && nextX < currX) return true;
-        if (w.x === nextX && w.y === nextY && w.type === 'L' && nextX > currX) return true;
-        if (w.x === nextX && w.y === nextY && w.type === 'D' && nextY < currY) return true;
-        if (w.x === nextX && w.y === nextY && w.type === 'U' && nextY > currY) return true;
-
-        return false;
-    });
-}
-
-function updatePlayerUI() {
-    const p = document.getElementById('player');
-    if (p) {
-        p.style.left = (playerPos.x * CELL_SIZE) + 'px';
-        p.style.top = (playerPos.y * CELL_SIZE) + 'px';
-    }
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') move('up');
-    if (e.key === 'ArrowDown') move('down');
-    if (e.key === 'ArrowLeft') move('left');
-    if (e.key === 'ArrowRight') move('right');
-});
-
-window.onload = () => {
-    loadLevel();
-};
+window.onload = loadLevel;
