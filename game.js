@@ -1,5 +1,5 @@
 // game.js
-const CELL_SIZE = 64; // El renderizado en pantalla escala perfecto tus imágenes de 128x128
+const CELL_SIZE = 64; 
 
 let currentLevelIndex = 0;
 let playerPos = { x: 0, y: 0 };
@@ -26,7 +26,7 @@ function loadLevel(index) {
         walls: []
     };
 
-    // 1. Generar Fondo con Autotiling Inteligente
+    // 1. Renderizar Fondo (Texturas de la carpeta /resources)
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const tile = document.createElement('div');
@@ -42,7 +42,7 @@ function loadLevel(index) {
         }
     }
 
-    // 2. Procesar Mapa de Entidades
+    // 2. Renderizar Entidades (Bloques, Trampas, Meta, Jugador)
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const char = lvl.map[r][c];
@@ -63,7 +63,7 @@ function loadLevel(index) {
         }
     }
 
-    // 3. Procesar Paredes delgadas
+    // 3. Renderizar Paredes Delgadas
     if (lvl.walls) {
         lvl.walls.forEach(w => {
             currentLevelData.walls.push(w);
@@ -87,43 +87,36 @@ function loadLevel(index) {
     updatePlayerUI();
 }
 
-// Algoritmo para determinar cuál textura de tablero usar según sus vecinos
 function getTileTexture(r, c, rows, cols) {
     const isTop = (r === 0);
     const isBottom = (r === rows - 1);
     const isLeft = (c === 0);
     const isRight = (c === cols - 1);
 
-    // Caso 1x1
     if (rows === 1 && cols === 1) return 'FullCenter.png';
 
-    // Casos 1xN (Horizontal Tube)
     if (rows === 1) {
         if (isLeft) return 'LCap.png';
         if (isRight) return 'RCap.png';
         return 'HTube.png';
     }
 
-    // Casos Nx1 (Vertical Tube)
     if (cols === 1) {
         if (isTop) return 'UCap.png';
         if (isBottom) return 'DCap.png';
         return 'VTube.png';
     }
 
-    // Esquinas
     if (isTop && isLeft) return 'ULCorner.png';
     if (isTop && isRight) return 'URCorner.png';
     if (isBottom && isLeft) return 'DLCorner.png';
     if (isBottom && isRight) return 'DRCorner.png';
 
-    // Bordes
     if (isTop) return 'UEdge.png';
     if (isBottom) return 'DEdge.png';
     if (isLeft) return 'LEdge.png';
     if (isRight) return 'REdge.png';
 
-    // Centro
     return 'Center.png';
 }
 
@@ -148,20 +141,14 @@ function move(dir) {
     if (dir === 'left') nextX--;
     if (dir === 'right') nextX++;
 
-    // 1. Bordes
     if (nextX < 0 || nextX >= lvl.cols || nextY < 0 || nextY >= lvl.rows) return;
-    // 2. Bloques sólidos
     if (lvl.blocks.some(b => b.x === nextX && b.y === nextY)) return;
-
-    // 3. Paredes delgadas
     if (isBlockedByWall(playerPos.x, playerPos.y, nextX, nextY)) return;
 
-    // Mover
     playerPos.x = nextX;
     playerPos.y = nextY;
     updatePlayerUI();
 
-    // Trampa
     if (lvl.traps.some(t => t.x === playerPos.x && t.y === playerPos.y)) {
         setTimeout(() => {
             alert("¡Caíste en una trampa!");
@@ -171,7 +158,6 @@ function move(dir) {
         return;
     }
 
-    // Victoria
     if (playerPos.x === lvl.goal.x && playerPos.y === lvl.goal.y) {
         setTimeout(() => {
             alert("¡Nivel Completado! 🎉");
@@ -182,16 +168,11 @@ function move(dir) {
 
 function isBlockedByWall(currX, currY, nextX, nextY) {
     return currentLevelData.walls.some(w => {
-        // Pared a la izquierda en la casilla actual bloquea ir a la izquierda
         if (w.x === currX && w.y === currY && w.type === 'L' && nextX < currX) return true;
-        // Pared a la derecha en la casilla actual bloquea ir a la derecha
         if (w.x === currX && w.y === currY && w.type === 'R' && nextX > currX) return true;
-        // Pared arriba en la casilla actual bloquea ir arriba
         if (w.x === currX && w.y === currY && w.type === 'U' && nextY < currY) return true;
-        // Pared abajo en la casilla actual bloquea ir abajo
         if (w.x === currX && w.y === currY && w.type === 'D' && nextY > currY) return true;
 
-        // Validaciones inversas (si la casilla destino tiene una pared opuesta)
         if (w.x === nextX && w.y === nextY && w.type === 'R' && nextX < currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'L' && nextX > currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'D' && nextY < currY) return true;
@@ -217,4 +198,3 @@ document.addEventListener('keydown', (e) => {
 window.onload = () => {
     loadLevel(currentLevelIndex);
 };
-                                          
