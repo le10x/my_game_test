@@ -1,12 +1,11 @@
 // game.js
 const CELL_SIZE = 64; 
 
-let currentLevelIndex = 0;
 let playerPos = { x: 0, y: 0 };
 let currentLevelData = { cols: 0, rows: 0, blocks: [], traps: [], goal: {x:0, y:0}, walls: [] };
 
-function loadLevel(index) {
-    const lvl = NIVELES[index];
+function loadLevel() {
+    const lvl = LEVEL_DATA;
     const screen = document.getElementById('game-screen');
     screen.innerHTML = '';
 
@@ -26,7 +25,7 @@ function loadLevel(index) {
         walls: []
     };
 
-    // 1. Renderizar Fondo con Texturas Autotiling
+    // 1. Renderizar Fondo con Autotiling
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const tile = document.createElement('div');
@@ -42,42 +41,49 @@ function loadLevel(index) {
         }
     }
 
-    // 2. Renderizar Entidades
+    // 2. Procesar Objetos y Paredes Combinadas (Lógica Flexible por Comas)
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            const char = lvl.map[r][c];
+            // Separar cada casilla por comas y limpiar espacios
+            const items = lvl.map[r][c].split(',').map(s => s.trim());
 
-            if (char === '#') {
-                currentLevelData.blocks.push({ x: c, y: r });
-                createEntity('solid-block', c, r, screen);
-            } else if (char === 'X') {
-                currentLevelData.traps.push({ x: c, y: r });
-                createEntity('trap-hazard', c, r, screen);
-            } else if (char === 'G') {
-                currentLevelData.goal = { x: c, y: r };
-                const goal = createEntity('', c, r, screen);
-                goal.id = 'goal';
-            } else if (char === 'P') {
-                currentLevelData.start = { x: c, y: r };
-            }
+            items.forEach(item => {
+                // Bloque Sólido
+                if (item === '#') {
+                    currentLevelData.blocks.push({ x: c, y: r });
+                    createEntity('solid-block', c, r, screen);
+                } 
+                // Trampa
+                else if (item === 'X') {
+                    currentLevelData.traps.push({ x: c, y: r });
+                    createEntity('trap-hazard', c, r, screen);
+                } 
+                // Meta
+                else if (item === 'G') {
+                    currentLevelData.goal = { x: c, y: r };
+                    const goal = createEntity('', c, r, screen);
+                    goal.id = 'goal';
+                } 
+                // Punto de Inicio / Jugador
+                else if (item === 'P') {
+                    currentLevelData.start = { x: c, y: r };
+                }
+                // Paredes Delgadas (U, D, L, R)
+                else if (['U', 'D', 'L', 'R'].includes(item)) {
+                    currentLevelData.walls.push({ x: c, y: r, type: item });
+                    const wall = document.createElement('div');
+                    wall.className = `wall-thin wall-${item}`;
+                    wall.style.left = (c * CELL_SIZE) + 'px';
+                    wall.style.top = (r * CELL_SIZE) + 'px';
+                    wall.style.width = CELL_SIZE + 'px';
+                    wall.style.height = CELL_SIZE + 'px';
+                    screen.appendChild(wall);
+                }
+            });
         }
     }
 
-    // 3. Renderizar Paredes Delgadas
-    if (lvl.walls) {
-        lvl.walls.forEach(w => {
-            currentLevelData.walls.push(w);
-            const wall = document.createElement('div');
-            wall.className = `wall-thin wall-${w.type}`;
-            wall.style.left = (w.x * CELL_SIZE) + 'px';
-            wall.style.top = (w.y * CELL_SIZE) + 'px';
-            wall.style.width = CELL_SIZE + 'px';
-            wall.style.height = CELL_SIZE + 'px';
-            screen.appendChild(wall);
-        });
-    }
-
-    // 4. Crear Jugador
+    // 3. Crear Jugador (al final para que quede por encima)
     playerPos = { ...currentLevelData.start };
     const player = document.createElement('div');
     player.id = 'player';
@@ -141,6 +147,7 @@ function move(dir) {
     if (dir === 'left') nextX--;
     if (dir === 'right') nextX++;
 
+    // Validar límites y bloques
     if (nextX < 0 || nextX >= lvl.cols || nextY < 0 || nextY >= lvl.rows) return;
     if (lvl.blocks.some(b => b.x === nextX && b.y === nextY)) return;
     if (isBlockedByWall(playerPos.x, playerPos.y, nextX, nextY)) return;
@@ -149,40 +156,34 @@ function move(dir) {
     playerPos.y = nextY;
     updatePlayerUI();
 
-    // Trampa
+    // Comprobar colisión con trampa
     if (lvl.traps.some(t => t.x === playerPos.x && t.y === playerPos.y)) {
         setTimeout(() => {
-            alert("¡Caíste en una trampa! Reiniciando nivel...");
+            alert("¡Caíste en una trampa!");
             playerPos = { ...lvl.start };
             updatePlayerUI();
         }, 100);
         return;
     }
 
-    // Victoria / Transición de Nivel
+    // Comprobar si llegó a la meta
     if (playerPos.x === lvl.goal.x && playerPos.y === lvl.goal.y) {
         setTimeout(() => {
-            // Verifica si quedan más niveles en el arreglo NIVELES
-            if (currentLevelIndex + 1 < NIVELES.length) {
-                currentLevelIndex++;
-                alert(`¡Nivel Completado! Avanzando al Nivel ${currentLevelIndex + 1}... 🎉`);
-                loadLevel(currentLevelIndex);
-            } else {
-                alert("🏆 ¡FELICIDADES! ¡Has completado todos los niveles del juego!");
-                currentLevelIndex = 0; // Reinicia al primer nivel al ganar todo
-                loadLevel(currentLevelIndex);
-            }
+            alert("¡Nivel Completado! 🎉");
+            loadLevel();
         }, 100);
     }
 }
 
 function isBlockedByWall(currX, currY, nextX, nextY) {
     return currentLevelData.walls.some(w => {
+        // Bloqueos desde la celda actual
         if (w.x === currX && w.y === currY && w.type === 'L' && nextX < currX) return true;
         if (w.x === currX && w.y === currY && w.type === 'R' && nextX > currX) return true;
         if (w.x === currX && w.y === currY && w.type === 'U' && nextY < currY) return true;
         if (w.x === currX && w.y === currY && w.type === 'D' && nextY > currY) return true;
 
+        // Bloqueos desde la celda destino
         if (w.x === nextX && w.y === nextY && w.type === 'R' && nextX < currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'L' && nextX > currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'D' && nextY < currY) return true;
@@ -206,5 +207,5 @@ document.addEventListener('keydown', (e) => {
 });
 
 window.onload = () => {
-    loadLevel(currentLevelIndex);
+    loadLevel();
 };
