@@ -25,7 +25,7 @@ function loadLevel() {
         walls: []
     };
 
-    // 1. Renderizar Fondo del Tablero
+    // 1. Renderizar Fondo con tus Texturas (Autotiling)
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const tile = document.createElement('div');
@@ -34,6 +34,11 @@ function loadLevel() {
             tile.style.top = (r * CELL_SIZE) + 'px';
             tile.style.width = CELL_SIZE + 'px';
             tile.style.height = CELL_SIZE + 'px';
+
+            // Carga la textura desde la carpeta resources
+            const tileTexture = getTileTexture(r, c, rows, cols);
+            tile.style.backgroundImage = `url('resources/${tileTexture}')`;
+            tile.style.backgroundSize = 'cover';
             screen.appendChild(tile);
         }
     }
@@ -90,6 +95,39 @@ function loadLevel() {
     updatePlayerUI();
 }
 
+function getTileTexture(r, c, rows, cols) {
+    const isTop = (r === 0);
+    const isBottom = (r === rows - 1);
+    const isLeft = (c === 0);
+    const isRight = (c === cols - 1);
+
+    if (rows === 1 && cols === 1) return 'FullCenter.png';
+
+    if (rows === 1) {
+        if (isLeft) return 'LCap.png';
+        if (isRight) return 'RCap.png';
+        return 'HTube.png';
+    }
+
+    if (cols === 1) {
+        if (isTop) return 'UCap.png';
+        if (isBottom) return 'DCap.png';
+        return 'VTube.png';
+    }
+
+    if (isTop && isLeft) return 'ULCorner.png';
+    if (isTop && isRight) return 'URCorner.png';
+    if (isBottom && isLeft) return 'DLCorner.png';
+    if (isBottom && isRight) return 'DRCorner.png';
+
+    if (isTop) return 'UEdge.png';
+    if (isBottom) return 'DEdge.png';
+    if (isLeft) return 'LEdge.png';
+    if (isRight) return 'REdge.png';
+
+    return 'Center.png';
+}
+
 function createEntity(className, c, r, container) {
     const el = document.createElement('div');
     if (className) el.className = className;
@@ -111,20 +149,14 @@ function move(dir) {
     if (dir === 'left') nextX--;
     if (dir === 'right') nextX++;
 
-    // Validar límites del mapa
     if (nextX < 0 || nextX >= lvl.cols || nextY < 0 || nextY >= lvl.rows) return;
-    
-    // Validar bloques sólidos
     if (lvl.blocks.some(b => b.x === nextX && b.y === nextY)) return;
-    
-    // Validar paredes delgadas
     if (isBlockedByWall(playerPos.x, playerPos.y, nextX, nextY)) return;
 
     playerPos.x = nextX;
     playerPos.y = nextY;
     updatePlayerUI();
 
-    // Comprobar si pisó trampa
     if (lvl.traps.some(t => t.x === playerPos.x && t.y === playerPos.y)) {
         setTimeout(() => {
             alert("¡Caíste en una trampa!");
@@ -134,7 +166,6 @@ function move(dir) {
         return;
     }
 
-    // Comprobar si llegó a la meta
     if (playerPos.x === lvl.goal.x && playerPos.y === lvl.goal.y) {
         setTimeout(() => {
             alert("¡Nivel Completado! 🎉");
@@ -145,13 +176,11 @@ function move(dir) {
 
 function isBlockedByWall(currX, currY, nextX, nextY) {
     return currentLevelData.walls.some(w => {
-        // Bloqueos al salir de la celda actual
         if (w.x === currX && w.y === currY && w.type === 'L' && nextX < currX) return true;
         if (w.x === currX && w.y === currY && w.type === 'R' && nextX > currX) return true;
         if (w.x === currX && w.y === currY && w.type === 'U' && nextY < currY) return true;
         if (w.x === currX && w.y === currY && w.type === 'D' && nextY > currY) return true;
 
-        // Bloqueos al intentar entrar en la celda destino
         if (w.x === nextX && w.y === nextY && w.type === 'R' && nextX < currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'L' && nextX > currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'D' && nextY < currY) return true;
@@ -169,7 +198,6 @@ function updatePlayerUI() {
     }
 }
 
-// Teclado
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp') move('up');
     if (e.key === 'ArrowDown') move('down');
@@ -177,7 +205,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') move('right');
 });
 
-// Iniciar al cargar
 window.onload = () => {
     loadLevel();
 };
