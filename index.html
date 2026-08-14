@@ -1,1 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Laberinto</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh;
+            background-image: url('resources/Background.png');
+            background-size: cover;
+            background-position: center;
+            font-family: sans-serif; user-select: none;
+            -webkit-user-select: none;
+        }
+        #game-container { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 20px; 
+            max-width: 100vw;
+            padding: 10px;
+        }
+        
+        #game-screen {
+            border: 8px solid black;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            overflow: hidden;
+            background-color: #888888;
+        }
 
+        /* Capa de fondo para el tablero (autotiling) */
+        .board-tile {
+            position: absolute;
+            background-size: cover;
+            z-index: 1;
+        }
+
+        /* Objetos de juego */
+        .solid-block { position: absolute; background-image: url('resources/SolidBlock.png'); background-size: cover; z-index: 3; }
+        
+        /* Paredes finas */
+        .wall-thin { position: absolute; background-size: cover; z-index: 4; }
+        .wall-L { background-image: url('resources/LWall.png'); }
+        .wall-R { background-image: url('resources/RWall.png'); }
+        .wall-U { background-image: url('resources/UWall.png'); }
+        .wall-D { background-image: url('resources/DWall.png'); }
+
+        /* Jugador, Meta y Trampa */
+        #player {
+            position: absolute; 
+            background-image: url('resources/Player.png'); 
+            background-size: cover; 
+            transition: all 0.15s ease-out; 
+            z-index: 10;
+        }
+        #goal { position: absolute; background-image: url('resources/Check.png'); background-size: cover; z-index: 5; }
+        .trap-hazard { position: absolute; background-image: url('resources/Over.png'); background-size: cover; z-index: 5; }
+
+        /* Botones de control con la misma imagen 'Button.png' */
+        #controls { display: grid; grid-template-columns: 70px 70px 70px; grid-template-rows: 60px 60px; gap: 10px; }
+        .btn { 
+            width: 70px; height: 60px;
+            background-image: url('resources/Button.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer; 
+        }
+        .btn:active { filter: brightness(0.7); }
+        
+        /* Rotaciones de la flecha */
+        .btn-up    { grid-column: 3; grid-row: 1; transform: rotate(-90deg); }
+        .btn-down  { grid-column: 3; grid-row: 2; transform: rotate(90deg); }
+        .btn-left  { grid-column: 1; grid-row: 2; transform: rotate(180deg); }
+        .btn-right { grid-column: 2; grid-row: 2; transform: rotate(0deg); }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="game-screen"></div>
+
+        <div id="controls">
+            <div class="btn btn-up" onclick="move('up')"></div>
+            <div class="btn btn-left" onclick="move('left')"></div>
+            <div class="btn btn-right" onclick="move('right')"></div>
+            <div class="btn btn-down" onclick="move('down')"></div>
+        </div>
+    </div>
+
+    <!-- Scripts en ORDEN -->
+    <script src="levels/level1.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
