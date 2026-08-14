@@ -26,7 +26,7 @@ function loadLevel(index) {
         walls: []
     };
 
-    // 1. Renderizar Fondo (Texturas de la carpeta /resources)
+    // 1. Renderizar Fondo con Texturas Autotiling
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const tile = document.createElement('div');
@@ -42,7 +42,7 @@ function loadLevel(index) {
         }
     }
 
-    // 2. Renderizar Entidades (Bloques, Trampas, Meta, Jugador)
+    // 2. Renderizar Entidades
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const char = lvl.map[r][c];
@@ -149,19 +149,29 @@ function move(dir) {
     playerPos.y = nextY;
     updatePlayerUI();
 
+    // Trampa
     if (lvl.traps.some(t => t.x === playerPos.x && t.y === playerPos.y)) {
         setTimeout(() => {
-            alert("¡Caíste en una trampa!");
+            alert("¡Caíste en una trampa! Reiniciando nivel...");
             playerPos = { ...lvl.start };
             updatePlayerUI();
         }, 100);
         return;
     }
 
+    // Victoria / Transición de Nivel
     if (playerPos.x === lvl.goal.x && playerPos.y === lvl.goal.y) {
         setTimeout(() => {
-            alert("¡Nivel Completado! 🎉");
-            loadLevel(currentLevelIndex);
+            // Verifica si quedan más niveles en el arreglo NIVELES
+            if (currentLevelIndex + 1 < NIVELES.length) {
+                currentLevelIndex++;
+                alert(`¡Nivel Completado! Avanzando al Nivel ${currentLevelIndex + 1}... 🎉`);
+                loadLevel(currentLevelIndex);
+            } else {
+                alert("🏆 ¡FELICIDADES! ¡Has completado todos los niveles del juego!");
+                currentLevelIndex = 0; // Reinicia al primer nivel al ganar todo
+                loadLevel(currentLevelIndex);
+            }
         }, 100);
     }
 }
