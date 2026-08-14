@@ -2,7 +2,7 @@
 const CELL_SIZE = 64; 
 
 let playerPos = { x: 0, y: 0 };
-let currentLevelData = { cols: 0, rows: 0, blocks: [], traps: [], goal: {x:0, y:0}, walls: [] };
+let currentLevelData = { cols: 0, rows: 0, blocks: [], traps: [], goal: {x:0, y:0}, start: {x:0, y:0}, walls: [] };
 
 function loadLevel() {
     const lvl = LEVEL_DATA;
@@ -25,7 +25,7 @@ function loadLevel() {
         walls: []
     };
 
-    // 1. Renderizar Fondo con Autotiling
+    // 1. Renderizar Fondo del Tablero
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const tile = document.createElement('div');
@@ -34,18 +34,15 @@ function loadLevel() {
             tile.style.top = (r * CELL_SIZE) + 'px';
             tile.style.width = CELL_SIZE + 'px';
             tile.style.height = CELL_SIZE + 'px';
-
-            const tileTexture = getTileTexture(r, c, rows, cols);
-            tile.style.backgroundImage = `url('resources/${tileTexture}')`;
             screen.appendChild(tile);
         }
     }
 
-    // 2. Procesar Objetos y Paredes Combinadas (Lógica Flexible por Comas)
+    // 2. Procesar Objetos y Paredes Combinadas
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            // Separar cada casilla por comas y limpiar espacios
-            const items = lvl.map[r][c].split(',').map(s => s.trim());
+            const cellValue = lvl.map[r][c] || ".";
+            const items = cellValue.split(',').map(s => s.trim());
 
             items.forEach(item => {
                 // Bloque Sólido
@@ -83,7 +80,7 @@ function loadLevel() {
         }
     }
 
-    // 3. Crear Jugador (al final para que quede por encima)
+    // 3. Crear Jugador
     playerPos = { ...currentLevelData.start };
     const player = document.createElement('div');
     player.id = 'player';
@@ -91,39 +88,6 @@ function loadLevel() {
     player.style.height = CELL_SIZE + 'px';
     screen.appendChild(player);
     updatePlayerUI();
-}
-
-function getTileTexture(r, c, rows, cols) {
-    const isTop = (r === 0);
-    const isBottom = (r === rows - 1);
-    const isLeft = (c === 0);
-    const isRight = (c === cols - 1);
-
-    if (rows === 1 && cols === 1) return 'FullCenter.png';
-
-    if (rows === 1) {
-        if (isLeft) return 'LCap.png';
-        if (isRight) return 'RCap.png';
-        return 'HTube.png';
-    }
-
-    if (cols === 1) {
-        if (isTop) return 'UCap.png';
-        if (isBottom) return 'DCap.png';
-        return 'VTube.png';
-    }
-
-    if (isTop && isLeft) return 'ULCorner.png';
-    if (isTop && isRight) return 'URCorner.png';
-    if (isBottom && isLeft) return 'DLCorner.png';
-    if (isBottom && isRight) return 'DRCorner.png';
-
-    if (isTop) return 'UEdge.png';
-    if (isBottom) return 'DEdge.png';
-    if (isLeft) return 'LEdge.png';
-    if (isRight) return 'REdge.png';
-
-    return 'Center.png';
 }
 
 function createEntity(className, c, r, container) {
@@ -147,16 +111,20 @@ function move(dir) {
     if (dir === 'left') nextX--;
     if (dir === 'right') nextX++;
 
-    // Validar límites y bloques
+    // Validar límites del mapa
     if (nextX < 0 || nextX >= lvl.cols || nextY < 0 || nextY >= lvl.rows) return;
+    
+    // Validar bloques sólidos
     if (lvl.blocks.some(b => b.x === nextX && b.y === nextY)) return;
+    
+    // Validar paredes delgadas
     if (isBlockedByWall(playerPos.x, playerPos.y, nextX, nextY)) return;
 
     playerPos.x = nextX;
     playerPos.y = nextY;
     updatePlayerUI();
 
-    // Comprobar colisión con trampa
+    // Comprobar si pisó trampa
     if (lvl.traps.some(t => t.x === playerPos.x && t.y === playerPos.y)) {
         setTimeout(() => {
             alert("¡Caíste en una trampa!");
@@ -177,13 +145,13 @@ function move(dir) {
 
 function isBlockedByWall(currX, currY, nextX, nextY) {
     return currentLevelData.walls.some(w => {
-        // Bloqueos desde la celda actual
+        // Bloqueos al salir de la celda actual
         if (w.x === currX && w.y === currY && w.type === 'L' && nextX < currX) return true;
         if (w.x === currX && w.y === currY && w.type === 'R' && nextX > currX) return true;
         if (w.x === currX && w.y === currY && w.type === 'U' && nextY < currY) return true;
         if (w.x === currX && w.y === currY && w.type === 'D' && nextY > currY) return true;
 
-        // Bloqueos desde la celda destino
+        // Bloqueos al intentar entrar en la celda destino
         if (w.x === nextX && w.y === nextY && w.type === 'R' && nextX < currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'L' && nextX > currX) return true;
         if (w.x === nextX && w.y === nextY && w.type === 'D' && nextY < currY) return true;
@@ -195,10 +163,13 @@ function isBlockedByWall(currX, currY, nextX, nextY) {
 
 function updatePlayerUI() {
     const p = document.getElementById('player');
-    p.style.left = (playerPos.x * CELL_SIZE) + 'px';
-    p.style.top = (playerPos.y * CELL_SIZE) + 'px';
+    if (p) {
+        p.style.left = (playerPos.x * CELL_SIZE) + 'px';
+        p.style.top = (playerPos.y * CELL_SIZE) + 'px';
+    }
 }
 
+// Teclado
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp') move('up');
     if (e.key === 'ArrowDown') move('down');
@@ -206,6 +177,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') move('right');
 });
 
+// Iniciar al cargar
 window.onload = () => {
     loadLevel();
 };
