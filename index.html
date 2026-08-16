@@ -1,13 +1,5 @@
 <style>
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        user-select: none;
-        -webkit-user-select: none;
-        touch-action: manipulation; /* Mejora la respuesta táctil */
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: manipulation; }
     body {
         background-image: url('resources/Background.png');
         background-size: cover;
@@ -15,57 +7,43 @@
         height: 100vh;
         width: 100vw;
         display: flex;
-        flex-direction: column;
-        align-items: center; /* Centra horizontalmente */
-        justify-content: center; /* Centra verticalmente */
-        gap: 20px; /* Espacio entre el tablero y los controles */
-        overflow: hidden; /* Evita que se mueva la pantalla al tocar */
+        flex-direction: column; /* Alinea todo verticalmente */
+        align-items: center;
+        overflow: hidden;
     }
-
     #board-container {
+        flex-grow: 1; /* El tablero tomará todo el espacio restante */
         display: flex;
         justify-content: center;
         align-items: center;
-        max-height: 65vh; /* Limita el tablero al 65% de la altura para dejar espacio a los botones */
         width: 100%;
+        overflow: hidden;
     }
-
     #game-board {
         position: relative;
-        /* El tamaño real se maneja mediante JS (transform: scale) */
+        transform-origin: center center;
     }
-
     .tile, .layer-item {
         position: absolute;
         width: 128px;
         height: 128px;
         background-size: contain;
-        background-repeat: no-repeat;
     }
-
     #controls {
         display: grid;
         grid-template-columns: repeat(3, 80px);
         grid-template-rows: repeat(2, 80px);
         gap: 15px;
-        padding-bottom: 20px; /* Espacio extra por seguridad */
+        padding-bottom: 20px;
+        flex-shrink: 0; /* Asegura que los controles nunca se reduzcan */
     }
-
     .btn {
-        width: 80px;
-        height: 80px;
+        width: 80px; height: 80px;
         background-image: url('resources/Button.png');
         background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        border: none;
-        outline: none;
-        background-color: transparent;
-        cursor: pointer;
-        touch-action: manipulation;
+        border: none; background-color: transparent;
     }
-
-    /* Ajuste de posición de los botones */
+    /* Rotaciones */
     #btn-up { grid-column: 3; grid-row: 1; transform: rotate(270deg); }
     #btn-left { grid-column: 1; grid-row: 2; transform: rotate(180deg); }
     #btn-right { grid-column: 2; grid-row: 2; transform: rotate(0deg); }
