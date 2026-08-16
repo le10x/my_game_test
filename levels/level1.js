@@ -1,13 +1,20 @@
-// levels/level1.js
-const LEVEL_DATA = {
-    // Sintaxis libre combinada por comas:
-    // P = Jugador | G = Meta | X = Trampa | # = Bloque | . = Vacío
-    // U = Pared Arriba | D = Pared Abajo | L = Pared Izquierda | R = Pared Derecha
-    map: [
-        ["P,D", ".",     ".",     "#",     "."],
-        [".",   "X",     ".",     ".",     "."],
-        [".",   ".",     ".",     "X,R",   "."],
-        [".",   "#,X",   ".",     "U",     "."],
-        [".",   ".",     ".",     ".",     "G"]
-    ]
+const levelData = {
+    cols: 5,
+    rows: 6,
+    playerStart: { x: 0, y: 1 },
+    check: { x: 4, y: 5 },
+    solidBlocks: [
+        { x: 4, y: 0 },
+        { x: 1, y: 4 }
+    ],
+    over: [
+        { x: 1, y: 1 },
+        { x: 3, y: 2 }
+    ],
+    walls: {
+        uWalls: [{ x: 0, y: 1 }, { x: 2, y: 4 }],
+        dWalls: [],
+        lWalls: [],
+        rWalls: [{ x: 2, y: 1 }]
+    }
 };
