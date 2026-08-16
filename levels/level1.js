@@ -1,6 +1,6 @@
 const levelData = {
-    cols: 5,
-    rows: 6,
+    cols: 7,
+    rows: 7,
     playerStart: { x: 0, y: 1 },
     check: { x: 4, y: 5 },
     solidBlocks: [
