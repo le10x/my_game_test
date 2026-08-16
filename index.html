@@ -1,87 +1,73 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Grid Game</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        body {
-            background-image: url('resources/Background.png');
-            background-size: cover;
-            background-position: center;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 0;
-            overflow: hidden;
-        }
-        #board-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-grow: 1;
-        }
-        #game-board {
-            position: relative;
-        }
-        .tile, .layer-item {
-            position: absolute;
-            width: 128px;
-            height: 128px;
-            background-size: contain;
-            background-repeat: no-repeat;
-        }
-        #controls {
-            display: grid;
-            grid-template-columns: repeat(3, 80px);
-            grid-template-rows: repeat(2, 80px);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            width: 80px;
-            height: 80px;
-            background-image: url('resources/Button.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            border: none;
-            outline: none;
-            background-color: transparent;
-            cursor: pointer;
-        }
-        .btn:active {
-            transform: scale(0.95);
-        }
-        #btn-up { grid-column: 3; grid-row: 1; transform: rotate(270deg); }
-        #btn-left { grid-column: 1; grid-row: 2; transform: rotate(180deg); }
-        #btn-right { grid-column: 2; grid-row: 2; transform: rotate(0deg); }
-        #btn-down { grid-column: 3; grid-row: 2; transform: rotate(90deg); }
-    </style>
-</head>
-<body>
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation; /* Mejora la respuesta táctil */
+    }
 
-    <div id="board-container">
-        <div id="game-board"></div>
-    </div>
+    body {
+        background-image: url('resources/Background.png');
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Centra horizontalmente */
+        justify-content: center; /* Centra verticalmente */
+        gap: 20px; /* Espacio entre el tablero y los controles */
+        overflow: hidden; /* Evita que se mueva la pantalla al tocar */
+    }
 
-    <div id="controls">
-        <button id="btn-up" class="btn"></button>
-        <button id="btn-left" class="btn"></button>
-        <button id="btn-right" class="btn"></button>
-        <button id="btn-down" class="btn"></button>
-    </div>
+    #board-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        max-height: 65vh; /* Limita el tablero al 65% de la altura para dejar espacio a los botones */
+        width: 100%;
+    }
 
-    <script src="levels/level1.js"></script>
-    <script src="game.js"></script>
-</body>
-</html>
+    #game-board {
+        position: relative;
+        /* El tamaño real se maneja mediante JS (transform: scale) */
+    }
+
+    .tile, .layer-item {
+        position: absolute;
+        width: 128px;
+        height: 128px;
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+
+    #controls {
+        display: grid;
+        grid-template-columns: repeat(3, 80px);
+        grid-template-rows: repeat(2, 80px);
+        gap: 15px;
+        padding-bottom: 20px; /* Espacio extra por seguridad */
+    }
+
+    .btn {
+        width: 80px;
+        height: 80px;
+        background-image: url('resources/Button.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    /* Ajuste de posición de los botones */
+    #btn-up { grid-column: 3; grid-row: 1; transform: rotate(270deg); }
+    #btn-left { grid-column: 1; grid-row: 2; transform: rotate(180deg); }
+    #btn-right { grid-column: 2; grid-row: 2; transform: rotate(0deg); }
+    #btn-down { grid-column: 3; grid-row: 2; transform: rotate(90deg); }
+</style>
