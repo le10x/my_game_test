@@ -1,171 +1,137 @@
-/**
- * game.js
- * Lógica principal del juego.
- * Asegúrate de cargar level1.js ANTES que este archivo en el HTML.
- */
-
 const TILE_SIZE = 128;
-let playerPos = { x: 0, y: 0 };
-const boardElement = document.getElementById('game-board');
+let playerPos = { ...levelData.playerStart };
 
-/**
- * Determina qué imagen de fondo corresponde a cada celda.
- */
-function getBoardTileImage(c, r, cols, rows) {
+function getTileTexture(x, y, cols, rows) {
     if (cols === 1 && rows === 1) return 'FullCenter.png';
-    
-    // Nivel 1xN (Vertical)
-    if (cols === 1) {
-        if (r === 0) return 'UCap.png';
-        if (r === rows - 1) return 'DCap.png';
-        return 'VTube.png';
-    }
-    
-    // Nivel Nx1 (Horizontal)
     if (rows === 1) {
-        if (c === 0) return 'LCap.png';
-        if (c === cols - 1) return 'RCap.png';
+        if (x === 0) return 'LCap.png';
+        if (x === cols - 1) return 'RCap.png';
         return 'HTube.png';
     }
-
-    // Nivel NxN
-    if (r === 0 && c === 0) return 'ULCorner.png';
-    if (r === 0 && c === cols - 1) return 'URCorner.png';
-    if (r === rows - 1 && c === 0) return 'DLCorner.png';
-    if (r === rows - 1 && c === cols - 1) return 'DRCorner.png';
-    if (r === 0) return 'UEdge.png';
-    if (r === rows - 1) return 'DEdge.png';
-    if (c === 0) return 'LEdge.png';
-    if (c === cols - 1) return 'REdge.png';
-    
+    if (cols === 1) {
+        if (y === 0) return 'UCap.png';
+        if (y === rows - 1) return 'DCap.png';
+        return 'VTube.png';
+    }
+    if (x === 0 && y === 0) return 'ULCorner.png';
+    if (x === cols - 1 && y === 0) return 'URCorner.png';
+    if (x === 0 && y === rows - 1) return 'DLCorner.png';
+    if (x === cols - 1 && y === rows - 1) return 'DRCorner.png';
+    if (y === 0) return 'UEdge.png';
+    if (y === rows - 1) return 'DEdge.png';
+    if (x === 0) return 'LEdge.png';
+    if (x === cols - 1) return 'REdge.png';
     return 'Center.png';
 }
 
-/**
- * Inicializa el juego y calcula la escala para que quepa en pantalla.
- */
-function initGame() {
-    if (typeof levelData === 'undefined') {
-        console.error("Error: levelData no definido. Asegúrate de incluir level1.js");
-        return;
+function initBoard() {
+    const board = document.getElementById('board');
+    board.style.gridTemplateColumns = `repeat(${levelData.cols}, ${TILE_SIZE}px)`;
+    board.style.gridTemplateRows = `repeat(${levelData.rows}, ${TILE_SIZE}px)`;
+    board.style.width = `${levelData.cols * TILE_SIZE}px`;
+    board.style.height = `${levelData.rows * TILE_SIZE}px`;
+
+    renderBoard();
+    scaleBoard();
+}
+
+function renderBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+
+    for (let y = 0; y < levelData.rows; y++) {
+        for (let x = 0; x < levelData.cols; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+
+            const baseImg = document.createElement('img');
+            baseImg.src = `resources/${getTileTexture(x, y, levelData.cols, levelData.rows)}`;
+            cell.appendChild(baseImg);
+
+            if (levelData.solidBlocks.some(b => b.x === x && b.y === y)) {
+                const img = document.createElement('img');
+                img.src = 'resources/SolidBlock.png';
+                cell.appendChild(img);
+            }
+
+            if (levelData.overs.some(o => o.x === x && o.y === y)) {
+                const img = document.createElement('img');
+                img.src = 'resources/Over.png';
+                cell.appendChild(img);
+            }
+
+            if (levelData.check.x === x && levelData.check.y === y) {
+                const img = document.createElement('img');
+                img.src = 'resources/Check.png';
+                cell.appendChild(img);
+            }
+
+            levelData.walls.filter(w => w.x === x && w.y === y).forEach(w => {
+                const img = document.createElement('img');
+                img.src = `resources/${w.dir}Wall.png`;
+                cell.appendChild(img);
+            });
+
+            if (playerPos.x === x && playerPos.y === y) {
+                const img = document.createElement('img');
+                img.src = 'resources/Player.png';
+                cell.appendChild(img);
+            }
+
+            board.appendChild(cell);
+        }
     }
+}
 
-    playerPos = { ...levelData.playerStart };
-
+function scaleBoard() {
+    const viewport = document.getElementById('viewport');
+    const wrapper = document.getElementById('board-wrapper');
+    
     const boardWidth = levelData.cols * TILE_SIZE;
     const boardHeight = levelData.rows * TILE_SIZE;
     
-    boardElement.style.width = `${boardWidth}px`;
-    boardElement.style.height = `${boardHeight}px`;
-
-    // Calcular escala: reservamos espacio para los controles (150px de altura)
-    const availableWidth = window.innerWidth * 0.9;
-    const availableHeight = (window.innerHeight - 150) * 0.9;
-    const scaleX = availableWidth / boardWidth;
-    const scaleY = availableHeight / boardHeight;
-    const scale = Math.min(scaleX, scaleY, 1.0); 
-
-    boardElement.style.transform = `scale(${scale})`;
+    const availableWidth = viewport.clientWidth * 0.9;
+    const availableHeight = viewport.clientHeight * 0.9;
     
-    renderBoard();
+    const scale = Math.min(availableWidth / boardWidth, availableHeight / boardHeight);
+    wrapper.style.transform = `scale(${scale})`;
 }
 
-/**
- * Renderiza el tablero completo y los objetos encima.
- */
-function renderBoard() {
-    boardElement.innerHTML = ''; // Limpiar
-
-    // Dibujar fondo del tablero
-    for (let r = 0; r < levelData.rows; r++) {
-        for (let c = 0; c < levelData.cols; c++) {
-            const tile = document.createElement('div');
-            tile.className = 'tile';
-            tile.style.left = `${c * TILE_SIZE}px`;
-            tile.style.top = `${r * TILE_SIZE}px`;
-            const tileImg = getBoardTileImage(c, r, levelData.cols, levelData.rows);
-            tile.style.backgroundImage = `url('resources/${tileImg}')`;
-            boardElement.appendChild(tile);
-        }
-    }
-
-    // Dibujar Objetos
-    renderItem(levelData.check.x, levelData.check.y, 'Check.png');
-    levelData.solidBlocks.forEach(b => renderItem(b.x, b.y, 'SolidBlock.png'));
-    levelData.over.forEach(o => renderItem(o.x, o.y, 'Over.png'));
-    levelData.walls.uWalls.forEach(w => renderItem(w.x, w.y, 'UWall.png'));
-    levelData.walls.dWalls.forEach(w => renderItem(w.x, w.y, 'DWall.png'));
-    levelData.walls.lWalls.forEach(w => renderItem(w.x, w.y, 'LWall.png'));
-    levelData.walls.rWalls.forEach(w => renderItem(w.x, w.y, 'RWall.png'));
-
-    // Dibujar Jugador
-    renderItem(playerPos.x, playerPos.y, 'Player.png', 'player-entity');
+function hasWall(x, y, dir) {
+    return levelData.walls.some(w => w.x === x && w.y === y && w.dir === dir);
 }
 
-function renderItem(x, y, imgSrc, id = '') {
-    const item = document.createElement('div');
-    item.className = 'layer-item';
-    if (id) item.id = id;
-    item.style.left = `${x * TILE_SIZE}px`;
-    item.style.top = `${y * TILE_SIZE}px`;
-    item.style.backgroundImage = `url('resources/${imgSrc}')`;
-    boardElement.appendChild(item);
-}
-
-/**
- * Verifica si hay una pared en una coordenada específica.
- */
-function hasWall(x, y, type) {
-    if (type === 'U') return levelData.walls.uWalls.some(w => w.x === x && w.y === y);
-    if (type === 'D') return levelData.walls.dWalls.some(w => w.x === x && w.y === y);
-    if (type === 'L') return levelData.walls.lWalls.some(w => w.x === x && w.y === y);
-    if (type === 'R') return levelData.walls.rWalls.some(w => w.x === x && w.y === y);
-    return false;
-}
-
-/**
- * Lógica de movimiento con colisiones.
- */
-function move(dx, dy, currentWallType, targetWallType) {
+function movePlayer(dx, dy) {
     const targetX = playerPos.x + dx;
     const targetY = playerPos.y + dy;
 
-    // 1. Limites del tablero
     if (targetX < 0 || targetX >= levelData.cols || targetY < 0 || targetY >= levelData.rows) return;
-    
-    // 2. Colisión con bloques sólidos
+
+    if (dx === 0 && dy === -1 && (hasWall(playerPos.x, playerPos.y, 'U') || hasWall(targetX, targetY, 'D'))) return;
+    if (dx === 0 && dy === 1 && (hasWall(playerPos.x, playerPos.y, 'D') || hasWall(targetX, targetY, 'U'))) return;
+    if (dx === -1 && dy === 0 && (hasWall(playerPos.x, playerPos.y, 'L') || hasWall(targetX, targetY, 'R'))) return;
+    if (dx === 1 && dy === 0 && (hasWall(playerPos.x, playerPos.y, 'R') || hasWall(targetX, targetY, 'L'))) return;
+
     if (levelData.solidBlocks.some(b => b.x === targetX && b.y === targetY)) return;
 
-    // 3. Colisión con Muros
-    // Bloqueado si hay muro en casilla actual (hacia la dirección deseada)
-    // O si hay muro en la casilla destino (hacia el lado opuesto)
-    if (hasWall(playerPos.x, playerPos.y, currentWallType)) return;
-    if (hasWall(targetX, targetY, targetWallType)) return;
+    playerPos = { x: targetX, y: targetY };
 
-    // Mover jugador
-    playerPos.x = targetX;
-    playerPos.y = targetY;
-
-    // 4. Verificar Over (Perder)
-    if (levelData.over.some(o => o.x === playerPos.x && o.y === playerPos.y)) {
+    if (levelData.overs.some(o => o.x === targetX && o.y === targetY)) {
         playerPos = { ...levelData.playerStart };
     }
 
-    // 5. Verificar Check (Ganar)
-    if (playerPos.x === levelData.check.x && playerPos.y === levelData.check.y) {
+    renderBoard();
+
+    if (levelData.check.x === targetX && levelData.check.y === targetY) {
         setTimeout(() => alert('¡Nivel Completado!'), 50);
     }
-
-    renderBoard();
 }
 
-// Event Listeners para botones
-document.getElementById('btn-up').addEventListener('click', () => move(0, -1, 'U', 'D'));
-document.getElementById('btn-down').addEventListener('click', () => move(0, 1, 'D', 'U'));
-document.getElementById('btn-left').addEventListener('click', () => move(-1, 0, 'L', 'R'));
-document.getElementById('btn-right').addEventListener('click', () => move(1, 0, 'R', 'L'));
+document.getElementById('btn-up').addEventListener('click', () => movePlayer(0, -1));
+document.getElementById('btn-down').addEventListener('click', () => movePlayer(0, 1));
+document.getElementById('btn-left').addEventListener('click', () => movePlayer(-1, 0));
+document.getElementById('btn-right').addEventListener('click', () => movePlayer(1, 0));
 
-// Inicialización
-window.onload = initGame;
-window.addEventListener('resize', initGame);
-        
+window.addEventListener('resize', scaleBoard);
+window.addEventListener('load', initBoard);
+                
