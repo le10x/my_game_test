@@ -1,51 +1,107 @@
-<style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: manipulation; }
-    body {
-        background-image: url('resources/Background.png');
-        background-size: cover;
-        background-position: center;
-        height: 100vh;
-        width: 100vw;
-        display: flex;
-        flex-direction: column; /* Alinea todo verticalmente */
-        align-items: center;
-        overflow: hidden;
-    }
-    #board-container {
-        flex-grow: 1; /* El tablero tomará todo el espacio restante */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        overflow: hidden;
-    }
-    #game-board {
-        position: relative;
-        transform-origin: center center;
-    }
-    .tile, .layer-item {
-        position: absolute;
-        width: 128px;
-        height: 128px;
-        background-size: contain;
-    }
-    #controls {
-        display: grid;
-        grid-template-columns: repeat(3, 80px);
-        grid-template-rows: repeat(2, 80px);
-        gap: 15px;
-        padding-bottom: 20px;
-        flex-shrink: 0; /* Asegura que los controles nunca se reduzcan */
-    }
-    .btn {
-        width: 80px; height: 80px;
-        background-image: url('resources/Button.png');
-        background-size: contain;
-        border: none; background-color: transparent;
-    }
-    /* Rotaciones */
-    #btn-up { grid-column: 3; grid-row: 1; transform: rotate(270deg); }
-    #btn-left { grid-column: 1; grid-row: 2; transform: rotate(180deg); }
-    #btn-right { grid-column: 2; grid-row: 2; transform: rotate(0deg); }
-    #btn-down { grid-column: 3; grid-row: 2; transform: rotate(90deg); }
-</style>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Juego Web</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: url('resources/Background.png') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #viewport {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        #board-wrapper {
+            transform-origin: center center;
+        }
+        #board {
+            position: relative;
+            display: grid;
+        }
+        .cell {
+            width: 128px;
+            height: 128px;
+            position: relative;
+        }
+        .cell img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 128px;
+            height: 128px;
+            pointer-events: none;
+        }
+        #controls {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px;
+            z-index: 10;
+        }
+        .dpad-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+        .btn-dir {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: url('resources/Button.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-up    { top: 0; left: 45px; transform: rotate(270deg); }
+        .btn-down  { bottom: 0; left: 45px; transform: rotate(90deg); }
+        .btn-left  { top: 45px; left: 0; transform: rotate(180deg); }
+        .btn-right { top: 45px; right: 0; transform: rotate(0deg); }
+    </style>
+</head>
+<body>
+
+    <div id="viewport">
+        <div id="board-wrapper">
+            <div id="board"></div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <div class="dpad-container">
+            <button class="btn-dir btn-left" id="btn-left"></button>
+            <button class="btn-dir btn-right" id="btn-right"></button>
+        </div>
+        <div class="dpad-container">
+            <button class="btn-dir btn-up" id="btn-up"></button>
+            <button class="btn-dir btn-down" id="btn-down"></button>
+        </div>
+    </div>
+
+    <script src="levels/level1.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
