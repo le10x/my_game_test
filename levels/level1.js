@@ -9,7 +9,7 @@ const levelData = {
     ],
     overs: [
         { x: 2, y: 0 },
-        { x: 4, y: 0 }
+        { x: 3, y: 0 }
     ],
     walls: [
         { x: 2, y: 1, dir: 'U' },
